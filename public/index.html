@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+  <title>Google Drive Files</title>
+</head>
+
+<body>
+  <h1>Google Drive Files</h1>
+  <form id="auth-form">
+    <button type="submit">Authorize with Google</button>
+  </form>
+  <div id="container" style="margin-top: 10px;">
+    <button id="list-files">List Files</button>
+    <ul id="file-list"></ul>
+  </div>
+  <script>
+    document.getElementById('auth-form').addEventListener('submit', function (e) {
+      e.preventDefault();
+
+      fetch('api/auth')
+        .then(response => response.json())
+        .then(data => {
+          window.location.href = data.url;
+        })
+        .catch(error => console.error('Error:', error));
+    });
+
+    document.getElementById('list-files').addEventListener('click', function () {
+      fetch('/api/files')
+        .then(response => response.json())
+        .then(data => {
+          const fileList = document.getElementById('file-list');
+          fileList.innerHTML = '';
+          data.files.forEach(file => {
+            const li = document.createElement('li');
+            const a = document.createElement('a');
+            a.href = `/api/download?fileId=${file.id}`;
+            a.download = file.name;
+            a.innerText = file.name;
+
+            const btn = document.createElement('button');
+            btn.innerText = 'Show users';
+            btn.style.marginLeft = '10px';
+            btn.onclick = function () {
+              fetch(`/api/permissions?fileId=${file.id}`)
+                .then(response => response.json())
+                .then(response => {
+                  const permList = document.createElement('ul');
+                  response.permissions.forEach(permission => {
+                    const permItem = document.createElement('li');
+                    permItem.innerText = permission.emailAddress;
+                    permList.appendChild(permItem);
+                  });
+                  li.appendChild(permList);
+                });
+            };
+
+            li.appendChild(a);
+            li.appendChild(btn);
+            fileList.appendChild(li);
+          });
+        });
+    });
+  </script>
+</body>
+
+</html>
